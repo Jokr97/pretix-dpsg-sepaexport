@@ -1,7 +1,7 @@
 SEPA Direct debit for pretix
 ============================
 
-This is a plugin for `pretix`_. 
+This is a plugin for `pretix`_ to create sepa direct debit mandates in a format the dpsg accounting department likes
 
 Development setup
 -----------------
