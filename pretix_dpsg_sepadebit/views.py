@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, ListView
 from pretix.base.models import Order, OrderPayment
 from pretix.control.permissions import EventPermissionRequiredMixin, OrganizerPermissionRequiredMixin
-from pretix_sepadebit.models import SepaExport, SepaExportOrder
+from pretix_dpsg_sepadebit.models import SepaExport, SepaExportOrder
 from sepaxml import SepaDD, validation
 
 from pretix.control.views.organizer import OrganizerDetailViewMixin
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExportListView(ListView):
-    template_name = 'pretix_sepadebit/export.html'
+    template_name = 'pretix_dpsg_sepadebit/export.html'
     model = SepaExport
     context_object_name = 'exports'
 
@@ -126,12 +126,12 @@ class ExportListView(ListView):
         else:
             messages.warning(request, _('No valid orders have been found.'))
         if hasattr(request, 'event'):
-            return redirect(reverse('plugins:pretix_sepadebit:export', kwargs={
+            return redirect(reverse('plugins:pretix_dpsg_sepadebit:export', kwargs={
                 'event': request.event.slug,
                 'organizer': request.organizer.slug,
             }))
         else:
-            return redirect(reverse('plugins:pretix_sepadebit:export', kwargs={
+            return redirect(reverse('plugins:pretix_dpsg_sepadebit:export', kwargs={
                 'organizer': request.organizer.slug,
             }))
 
@@ -153,7 +153,7 @@ class DownloadView(DetailView):
 class OrdersView(DetailView):
     model = SepaExport
     context_object_name = 'export'
-    template_name = 'pretix_sepadebit/orders.html'
+    template_name = 'pretix_dpsg_sepadebit/orders.html'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

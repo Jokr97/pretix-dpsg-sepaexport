@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class SepaDebit(BasePaymentProvider):
     identifier = 'sepadebit'
-    verbose_name = _('SEPA debit')
+    verbose_name = _('SEPA debit DPSG')
     abort_pending_allowed = True
 
     @property
@@ -139,7 +139,7 @@ class SepaDebit(BasePaymentProvider):
         return False
 
     def payment_form_render(self, request) -> str:
-        template = get_template('pretix_sepadebit/checkout_payment_form.html')
+        template = get_template('pretix_dpsg_sepadebit/checkout_payment_form.html')
         ctx = {
             'request': request,
             'event': self.event,
@@ -150,7 +150,7 @@ class SepaDebit(BasePaymentProvider):
         return template.render(ctx)
 
     def checkout_confirm_render(self, request) -> str:
-        template = get_template('pretix_sepadebit/checkout_payment_confirm.html')
+        template = get_template('pretix_dpsg_sepadebit/checkout_payment_confirm.html')
         ctx = {
             'request': request,
             'event': self.event,
@@ -183,12 +183,12 @@ class SepaDebit(BasePaymentProvider):
             del request.session['payment_sepa_bic']
 
     def payment_pending_render(self, request: HttpRequest, payment: OrderPayment):
-        template = get_template('pretix_sepadebit/pending.html')
+        template = get_template('pretix_dpsg_sepadebit/pending.html')
         ctx = {'request': request, 'event': self.event, 'settings': self.settings}
         return template.render(ctx)
 
     def payment_control_render(self, request: HttpRequest, payment: OrderPayment):
-        template = get_template('pretix_sepadebit/control.html')
+        template = get_template('pretix_dpsg_sepadebit/control.html')
         ctx = {
             'request': request,
             'event': self.event,
@@ -203,7 +203,7 @@ class SepaDebit(BasePaymentProvider):
         if self.settings.reference_prefix:
             ref = self.settings.reference_prefix + "-" + ref
 
-        template = get_template('pretix_sepadebit/mail.txt')
+        template = get_template('pretix_dpsg_sepadebit/mail.txt')
         ctx = {
             'event': self.event,
             'order': order,

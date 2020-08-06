@@ -1,6 +1,6 @@
 #!/bin/sh
 COMPONENTS=pretix/pretix-plugin-sepadebit
-DIR=pretix_sepadebit/locale
+DIR=pretix_dpsg_sepadebit/locale
 # Renerates .po files used for translating the plugin
 set -e
 set -x

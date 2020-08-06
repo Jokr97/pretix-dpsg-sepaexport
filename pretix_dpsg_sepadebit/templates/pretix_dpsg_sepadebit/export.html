@@ -18,7 +18,7 @@
         <div class="alert alert-info">
             {% trans "If you want, you can now also create SEPA debit files for multiple events combined." %}
             <strong>
-                <a href="{% url "plugins:pretix_sepadebit:export" organizer=request.organizer.slug %}">
+                <a href="{% url "plugins:pretix_dpsg_sepadebit:export" organizer=request.organizer.slug %}">
                     {% trans "Go to organizer-level exports" %}
                 </a>
             </strong>
@@ -63,17 +63,17 @@
                     </td>
                     <td class="text-right">
                         {% if export.event %}
-                            <a class="btn btn-default" href="{% url "plugins:pretix_sepadebit:orders" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
+                            <a class="btn btn-default" href="{% url "plugins:pretix_dpsg_sepadebit:orders" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
                                 <span class="fa fa-list"></span> {% trans "Orders" %}
                             </a>
-                            <a class="btn btn-primary" href="{% url "plugins:pretix_sepadebit:download" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
+                            <a class="btn btn-primary" href="{% url "plugins:pretix_dpsg_sepadebit:download" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
                                 <span class="fa fa-download"></span> {% trans "Download XML" %}
                             </a>
                         {% else %}
-                            <a class="btn btn-default" href="{% url "plugins:pretix_sepadebit:orders" organizer=request.organizer.slug id=export.id %}">
+                            <a class="btn btn-default" href="{% url "plugins:pretix_dpsg_sepadebit:orders" organizer=request.organizer.slug id=export.id %}">
                                 <span class="fa fa-list"></span> {% trans "Orders" %}
                             </a>
-                            <a class="btn btn-primary" href="{% url "plugins:pretix_sepadebit:download" organizer=request.organizer.slug id=export.id %}">
+                            <a class="btn btn-primary" href="{% url "plugins:pretix_dpsg_sepadebit:download" organizer=request.organizer.slug id=export.id %}">
                                 <span class="fa fa-download"></span> {% trans "Download XML" %}
                             </a>
                         {% endif %}

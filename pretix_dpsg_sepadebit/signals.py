@@ -8,12 +8,12 @@ from pretix.base.signals import (
 )
 from pretix.control.signals import nav_event, nav_organizer
 
-from .payment import SepaDebit
+from .payment import DPSGSepaDebit
 
 
 @receiver(register_payment_providers, dispatch_uid="payment_sepadebit")
 def register_payment_provider(sender, **kwargs):
-    return SepaDebit
+    return DPSGSepaDebit
 
 
 @receiver(nav_event, dispatch_uid="payment_sepadebit_nav")
@@ -23,12 +23,12 @@ def control_nav_import(sender, request=None, **kwargs):
         return []
     return [
         {
-            'label': _('SEPA debit'),
-            'url': reverse('plugins:pretix_sepadebit:export', kwargs={
+            'label': _('SEPA debit DPSG'),
+            'url': reverse('plugins:pretix_dpsg_sepadebit:export', kwargs={
                 'event': request.event.slug,
                 'organizer': request.event.organizer.slug,
             }),
-            'active': (url.namespace == 'plugins:pretix_sepadebit' and url.url_name == 'export'),
+            'active': (url.namespace == 'plugins:pretix_dpsg_sepadebit' and url.url_name == 'export'),
             'icon': 'bank',
         }
     ]
@@ -39,15 +39,15 @@ def control_nav_orga_sepadebit(sender, request=None, **kwargs):
     url = resolve(request.path_info)
     if not request.user.has_organizer_permission(request.organizer, 'can_change_organizer_settings', request=request):
         return []
-    if not request.organizer.events.filter(plugins__icontains='pretix_sepadebit'):
+    if not request.organizer.events.filter(plugins__icontains='pretix_dpsg_sepadebit'):
         return []
     return [
         {
-            'label': _('SEPA debit'),
-            'url': reverse('plugins:pretix_sepadebit:export', kwargs={
+            'label': _('SEPA debit DPSG'),
+            'url': reverse('plugins:pretix_dpsg_sepadebit:export', kwargs={
                 'organizer': request.organizer.slug,
             }),
-            'active': (url.namespace == 'plugins:pretix_sepadebit' and url.url_name == 'export'),
+            'active': (url.namespace == 'plugins:pretix_dpsg_sepadebit' and url.url_name == 'export'),
             'icon': 'bank',
         }
     ]
@@ -60,7 +60,7 @@ def register_csv(sender, **kwargs):
 
 
 class PaymentLogsShredder(BaseDataShredder):
-    verbose_name = _('SEPA debit history')
+    verbose_name = _('SEPA debit DPSG history')
     identifier = 'sepadebit_history'
     description = _('This will remove previously exported SEPA XML files containing banking information.')
 

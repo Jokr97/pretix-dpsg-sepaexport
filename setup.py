@@ -24,13 +24,13 @@ cmdclass = {
 
 
 setup(
-    name='pretix-sepadebit',
+    name='pretix-dpsg-sepadebit',
     version='1.6.2',
     description='This plugin adds SEPA direct debit support to pretix',
     long_description=long_description,
-    url='https://github.com/pretix/pretix-sepadebit',
-    author='Raphael Michel',
-    author_email='mail@raphaelmichel.de',
+    url='https://github.com/bockstaller/pretix-dpsg-sepadebit',
+    author='Lukas Bockstaller',
+    author_email='lukas.bockstaller@dpsg.de',
     license='Apache Software License',
 
     install_requires=['django-localflavor', 'sepaxml>=2.0.0'],
@@ -39,6 +39,6 @@ setup(
     cmdclass=cmdclass,
     entry_points="""
 [pretix.plugin]
-pretix_sepadebit=pretix_sepadebit:PretixPluginMeta
+pretix_dpsg_sepadebit=pretix_dpsg_sepadebit:PretixPluginMeta
 """,
 )

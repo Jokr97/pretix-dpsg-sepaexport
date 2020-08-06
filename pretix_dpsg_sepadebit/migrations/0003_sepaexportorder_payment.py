@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('pretixbase', '0097_auto_20180722_0804'),
-        ('pretix_sepadebit', '0002_auto_20170530_1527'),
+        ('pretix_dpsg_sepadebit', '0002_auto_20170530_1527'),
     ]
 
     operations = [

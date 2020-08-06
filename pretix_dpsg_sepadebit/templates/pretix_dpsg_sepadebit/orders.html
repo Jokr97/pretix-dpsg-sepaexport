@@ -7,11 +7,11 @@
     <h1>
         {% blocktrans with date=export.datetime|date:"SHORT_DATETIME_FORMAT" %}SEPA export: {{ date }}{% endblocktrans %}
         {% if export.event %}
-            <a class="btn btn-default" href="{% url "plugins:pretix_sepadebit:download" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
+            <a class="btn btn-default" href="{% url "plugins:pretix_dpsg_sepadebit:download" organizer=request.organizer.slug event=export.event.slug id=export.id %}">
                 <span class="fa fa-download"></span> {% trans "Download XML" %}
             </a>
         {% else %}
-            <a class="btn btn-default" href="{% url "plugins:pretix_sepadebit:download" organizer=request.organizer.slug id=export.id %}">
+            <a class="btn btn-default" href="{% url "plugins:pretix_dpsg_sepadebit:download" organizer=request.organizer.slug id=export.id %}">
                 <span class="fa fa-download"></span> {% trans "Download XML" %}
             </a>
         {% endif %}

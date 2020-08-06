@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pretix_sepadebit', '0003_sepaexportorder_payment'),
+        ('pretix_dpsg_sepadebit', '0003_sepaexportorder_payment'),
     ]
 
     operations = [

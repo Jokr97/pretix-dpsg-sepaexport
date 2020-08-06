@@ -9,8 +9,8 @@ from django.db import migrations, models
 def fwd(apps, schema_editor):
     # We can't import the Person model directly as it may be a newer
     # version than this migration expects. We use the historical version.
-    SepaExport = apps.get_model('pretix_sepadebit', 'SepaExport')
-    SepaExportOrder = apps.get_model('pretix_sepadebit', 'SepaExportOrder')
+    SepaExport = apps.get_model('pretix_dpsg_sepadebit', 'SepaExport')
+    SepaExportOrder = apps.get_model('pretix_dpsg_sepadebit', 'SepaExportOrder')
     for se in SepaExport.objects.all():
         for o in se.orders.all():
             SepaExportOrder.objects.create(export=se, order=o, amount=o.total)
@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('pretixbase', '0061_auto_20170521_0942'),
-        ('pretix_sepadebit', '0001_initial'),
+        ('pretix_dpsg_sepadebit', '0001_initial'),
     ]
 
     operations = [
@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sepaexportorder',
             name='export',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='pretix_sepadebit.SepaExport'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='pretix_dpsg_sepadebit.SepaExport'),
         ),
         migrations.AddField(
             model_name='sepaexportorder',

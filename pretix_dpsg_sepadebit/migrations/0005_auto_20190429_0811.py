@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('pretixbase', '0118_auto_20190423_0839'),
-        ('pretix_sepadebit', '0004_sepaexport_testmode'),
+        ('pretix_dpsg_sepadebit', '0004_sepaexport_testmode'),
     ]
 
     operations = [
