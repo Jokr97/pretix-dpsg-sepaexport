@@ -55,9 +55,10 @@ class DebitList(BaseExporter):
         diamant_invoices = []
 
         for mandate in mandates:
-
-            invoice_no = mandate.order.invoices.all().order_by('-date').first().invoice_no
+            invoice_no = mandate.order.invoices.last().invoice_no
             common_key = prefix + invoice_no[-4:]
+
+            full_invoice_no = mandate.order.invoices.last().full_invoice_no
 
             mandate_export = {}
             mandate_export['Kontonummer'] = common_key
@@ -92,9 +93,9 @@ class DebitList(BaseExporter):
             diamant_invoice['Kunde'] = common_key
             diamant_invoice['KZ'] = 'L'
             diamant_invoice['Datum'] = datetime.strptime(mandate.info_data['date'], '%Y-%m-%d').astimezone(tz).strftime('%Y%m%d')
-            diamant_invoice['Rechnung'] = invoice_no
+            diamant_invoice['Rechnung'] = full_invoice_no
             diamant_invoice['SAKO'] = sako
-            diamant_invoice['Belegung'] = belegung + ' - ' + invoice_no
+            diamant_invoice['Belegung'] = belegung + ' - ' + full_invoice_no
             diamant_invoice['Wert1'] = mandate.order.total
             diamant_invoice['Steuersatz'] = 0
             diamant_invoice['Steuer'] = 0
