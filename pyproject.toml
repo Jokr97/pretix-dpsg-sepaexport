@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.entry-points."pretix.plugin"]
-pretix_sepadebit = "pretix_sepadebit:PretixPluginMeta"
+pretix_dpsg_sepadebit = "pretix_dpsg_sepadebit:PretixPluginMeta"
 
 [project.entry-points."distutils.commands"]
 build = "pretix_plugin_build.build:CustomBuild"
@@ -38,7 +38,7 @@ repository = "https://github.com/pretix/pretix-sepadebit.git"
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "pretix_sepadebit.__version__"}
+version = {attr = "pretix_dpsg_sepadebit.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["pretix*"]

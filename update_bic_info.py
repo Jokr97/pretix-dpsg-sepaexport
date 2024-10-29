@@ -29,5 +29,5 @@ for line in data.split("\n"):
 
 # Write file
 d = json.dumps(map)
-with open("pretix_sepadebit/bicdata.py", "w") as f:
+with open("pretix_dpsg_sepadebit/bicdata.py", "w") as f:
     f.write(f"DATA = {d}")
