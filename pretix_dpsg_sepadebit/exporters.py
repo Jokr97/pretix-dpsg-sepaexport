@@ -1,29 +1,37 @@
 import csv
 import io
 import zipfile
-from datetime import datetime
-from collections import OrderedDict
-
 import pytz
-from django import forms
-from django.db.models.functions import Coalesce
-from django.utils.translation import gettext as _, gettext_lazy
-from pretix.base.exporter import BaseExporter
+from datetime import datetime
+
+from collections import OrderedDict
+from django.utils.timezone import now
+from django.utils.translation import gettext as _, gettext_lazy, pgettext_lazy
+from pretix.base.exporter import ListExporter
 from pretix.base.models import Order, OrderPosition, Question, OrderPayment
-from pretix_dpsg_sepadebit.models import SepaExportOrder
+from pretix.base.timeframes import (
+    DateFrameField,
+    resolve_timeframe_to_datetime_start_inclusive_end_exclusive,
+)
 from pretix_dpsg_sepadebit.payment import DPSGSepaDebit
 from pretix.base.settings import SettingsSandbox
 
+from pretix_dpsg_sepadebit.models import SepaExportOrder
 
-class DebitList(BaseExporter):
-    identifier = 'debitlistcsv'
-    verbose_name = gettext_lazy('List of SEPA debits DPSG (CSV)')
+
+class DebitList(ListExporter):
+    identifier = "debitlistcsv"
+    verbose_name = gettext_lazy("List of previous SEPA debits")
+    category = pgettext_lazy("export_category", "Order data")
+    description = gettext_lazy(
+        "Download a spreadsheet of all SEPA debits that have previously been generated and "
+        'exported by the system. To create a new export, use the "SEPA debit" section in '
+        "the main menu."
+    )
 
     def __init__(self, event, progress_callback=lambda v: None):
         super().__init__(event, progress_callback)
         self.settings = SettingsSandbox('payment', DPSGSepaDebit.identifier, event)
-
-
     def render(self, form_data: dict):
         mandate_export_headers = ['Satzart', 'VKZ', 'Kontonummer', 'Mandatsbezeichnung', 'Mandatsnummer', 'BIC', 'IBAN_Nummer', 'Unterschrift_am', 'Status', 'Mandatstyp', 'Einmalmandat', 'Standardmandat', 'BankImDebAnlegen', 'Glaeubiger_ID', 'Glaeubiger_Name', 'Letzte_Verwendung_am'
         ]
