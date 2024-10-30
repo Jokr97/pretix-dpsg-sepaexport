@@ -2,7 +2,7 @@ from typing import Union
 
 import logging
 from collections import OrderedDict
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -21,6 +21,7 @@ from pretix.base.models import Order, OrderPayment, OrderRefund, Quota
 from pretix.base.payment import (
     BasePaymentProvider, PaymentException, PaymentProviderForm,
 )
+from pretix.base.reldate import RelativeDateField, RelativeDateWrapper, RelativeDateWidget, BASE_CHOICES
 
 from pretix_dpsg_sepadebit.models import SepaDueDate
 
@@ -80,8 +81,8 @@ class SEPAPaymentProviderForm(PaymentProviderForm):
         return d
 
 
-class SepaDebit(BasePaymentProvider):
-    identifier = "sepadebit"
+class DPSGSepaDebit(BasePaymentProvider):
+    identifier = "dpsg_sepadebit"
     verbose_name = _("SEPA debit")
     abort_pending_allowed = True
     payment_form_class = SEPAPaymentProviderForm
@@ -113,12 +114,18 @@ class SepaDebit(BasePaymentProvider):
                 (
                     "ack",
                     forms.BooleanField(
-                        label=_(
-                            "I have understood that I need to regularly create SEPA XML export files and transfer "
-                            "them to my bank in order to have my bank collect the customer payments."
-                        ),
+                        label=_('I have understood that I need to export the SEPA mandates and import them into Diamant.'),
                         required=True,
                     ),
+                ),                
+                (
+                    'due_date',
+                    forms.DateField(
+                        label=_('Debit date'),
+                        help_text=_('The date when the sepa mandates are due.'),
+                        widget=forms.DateInput(
+                            attrs={'class': 'datepickerfield'})
+                    )
                 ),
                 (
                     "creditor_name",
@@ -180,18 +187,41 @@ class SepaDebit(BasePaymentProvider):
                     ),
                 ),
                 (
-                    "prenotification_days",
+                    'diamant_ledger_prefix',
                     forms.IntegerField(
-                        label=_("Pre-notification time"),
-                        help_text=_(
-                            "Number of days between the placement of the order and the due date of the direct "
-                            "debit. Depending on your legislation and your bank rules, you might be required to "
-                            "hand in a debit at least 5 days before the due date at your bank and you might even "
-                            "be required to inform the customer at least 14 days beforehand. We recommend "
-                            "configuring at least 7 days."
-                        ),
-                        min_value=1,
-                    ),
+                        label=_('Diamant ledger prefix'),
+                        help_text=_('Prefix for the account number in diamant'),
+                        min_value=100,
+                        max_value=999,
+                    )
+                ),
+                (
+                    'diamant_nominal_account',
+                    forms.CharField(
+                        label=_('Diamant nomminal account'),
+                        help_text=_('Nomminal Account for Diamant (Sachkonto)'),
+                    )
+                ),
+                (
+                    'diamant_description',
+                    forms.CharField(
+                        label=_('Diamant accounting entry description'),
+                        help_text=_('Description for the accounting entry (Belegung).'),
+                    )
+                ),
+                (
+                    'diamant_cost_centre',
+                    forms.CharField(
+                        label=_('Diamant cost centre'),
+                        help_text=_('Cost centre (Kostenstelle) for the accounting entry.'),
+                    )
+                ),
+                (
+                    'diamant_cost_object',
+                    forms.CharField(
+                        label=_('Diamant cost object'),
+                        help_text=_('Cost object (Kostenträger) for the accounting entry.'),
+                    )
                 ),
                 (
                     "iban_blocklist",
@@ -405,6 +435,8 @@ class SepaDebit(BasePaymentProvider):
                 },
             )[0]
 
+            payment.save()
+
             payment.confirm(mail_text=self.order_pending_mail_render(payment.order))
         except Quota.QuotaExceededException as e:
             due.delete()
@@ -447,13 +479,13 @@ class SepaDebit(BasePaymentProvider):
             "creditor_id": self.settings.creditor_id,
             "creditor_name": self.settings.creditor_name,
             "reference": ref,
-            "date": self._due_date(order),
+            "date": self._due_date(),
         }
         return template.render(ctx)
 
     def _due_date(self, order=None):
-        due_date = self._due_date_reminded(order)
-        return due_date[0]
+        due_date = self.settings.get('due_date')
+        return datetime.strptime(due_date, '%Y-%m-%d')
 
     def _due_date_reminded(self, order=None):
         startdate = order.datetime.date() if order else now().date()
