@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("pretixbase", "0226_itemvariationmetavalue"),
-        ("pretix_dpsg_sepadebit", "0007_sepaduedate"),
+        ("pretix_sepadebit", "0007_sepaduedate"),
     ]
 
     operations = [

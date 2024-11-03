@@ -4,33 +4,23 @@ import zipfile
 import pytz
 from datetime import datetime
 
-from collections import OrderedDict
-from django.utils.timezone import now
 from django.utils.translation import gettext as _, gettext_lazy, pgettext_lazy
-from pretix.base.exporter import ListExporter
+from pretix.base.exporter import BaseExporter
 from pretix.base.models import Order, OrderPosition, Question, OrderPayment
-from pretix.base.timeframes import (
-    DateFrameField,
-    resolve_timeframe_to_datetime_start_inclusive_end_exclusive,
-)
-from pretix_dpsg_sepadebit.payment import DPSGSepaDebit
+
+from pretix_sepadebit.payment import DPSGSepaDebit
 from pretix.base.settings import SettingsSandbox
 
-from pretix_dpsg_sepadebit.models import SepaExportOrder
-
-
-class DebitList(ListExporter):
+class DebitList(BaseExporter):
     identifier = "debitlistcsv"
-    verbose_name = gettext_lazy("List of previous SEPA debits")
-    category = pgettext_lazy("export_category", "Order data")
+    verbose_name = gettext_lazy("DPSG: List of all SEPA debits (CSVs)")
+    category = pgettext_lazy("export_category", "Invoices")
     description = gettext_lazy(
-        "Download a spreadsheet of all SEPA debits that have previously been generated and "
-        'exported by the system. To create a new export, use the "SEPA debit" section in '
-        "the main menu."
+        "Download a spreadsheet of all SEPA debits that have been made. Includes mandate export, SEPA address export and Diamant invoice export as csv files in a zip archive."
     )
 
-    def __init__(self, event, progress_callback=lambda v: None):
-        super().__init__(event, progress_callback)
+    def __init__(self, event, organizer, progress_callback=lambda v: None):
+        super().__init__(event, organizer, progress_callback)
         self.settings = SettingsSandbox('payment', DPSGSepaDebit.identifier, event)
     def render(self, form_data: dict):
         mandate_export_headers = ['Satzart', 'VKZ', 'Kontonummer', 'Mandatsbezeichnung', 'Mandatsnummer', 'BIC', 'IBAN_Nummer', 'Unterschrift_am', 'Status', 'Mandatstyp', 'Einmalmandat', 'Standardmandat', 'BankImDebAnlegen', 'Glaeubiger_ID', 'Glaeubiger_Name', 'Letzte_Verwendung_am'
@@ -48,7 +38,7 @@ class DebitList(ListExporter):
         sepa_address_writer = csv.DictWriter(sepa_address_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=sepa_address_headers)
         diamant_invoice_writer = csv.DictWriter(diamant_invoice_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=diamant_invoice_headers)
 
-        mandates = OrderPayment.objects.filter(order__event=self.event).filter(provider=DPSGSepaDebit.identifier).filter(state=OrderPayment.PAYMENT_STATE_CONFIRMED)
+        mandates = OrderPayment.objects.filter(order__event=self.event).filter(provider=DPSGSepaDebit.identifier).filter(state=OrderPayment.PAYMENT_STATE_CONFIRMED).select_related("sepadebit_due")
 
         tz = pytz.timezone(self.event.settings.timezone)
 
@@ -63,10 +53,15 @@ class DebitList(ListExporter):
         diamant_invoices = []
 
         for mandate in mandates:
-            invoice_no = mandate.order.invoices.last().invoice_no
+            print(mandate.info_data)
+            if not mandate.order.invoices.exists():
+                print('No invoice found for order ' + mandate.order.code)
+                continue
+            last_invoice = mandate.order.invoices.last()
+            invoice_no = last_invoice.invoice_no
             common_key = prefix + invoice_no[-4:]
 
-            full_invoice_no = mandate.order.invoices.last().full_invoice_no
+            full_invoice_no = last_invoice.full_invoice_no
 
             mandate_export = {}
             mandate_export['Kontonummer'] = common_key
@@ -100,7 +95,7 @@ class DebitList(ListExporter):
             diamant_invoice = {}
             diamant_invoice['Kunde'] = common_key
             diamant_invoice['KZ'] = 'L'
-            diamant_invoice['Datum'] = datetime.strptime(mandate.info_data['date'], '%Y-%m-%d').astimezone(tz).strftime('%Y%m%d')
+            diamant_invoice['Datum'] = mandate.sepadebit_due.date.strftime('%Y%m%d')
             diamant_invoice['Rechnung'] = full_invoice_no
             diamant_invoice['SAKO'] = sako
             diamant_invoice['Belegung'] = belegung + ' - ' + full_invoice_no

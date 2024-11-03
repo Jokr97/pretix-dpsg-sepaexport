@@ -23,7 +23,7 @@ from pretix.base.payment import (
 )
 from pretix.base.reldate import RelativeDateField, RelativeDateWrapper, RelativeDateWidget, BASE_CHOICES
 
-from pretix_dpsg_sepadebit.models import SepaDueDate
+from pretix_sepadebit.models import SepaDueDate
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class SEPAPaymentProviderForm(PaymentProviderForm):
 
 
 class DPSGSepaDebit(BasePaymentProvider):
-    identifier = "dpsg_sepadebit"
+    identifier = "sepadebit"
     verbose_name = _("SEPA debit")
     abort_pending_allowed = True
     payment_form_class = SEPAPaymentProviderForm
@@ -117,15 +117,6 @@ class DPSGSepaDebit(BasePaymentProvider):
                         label=_('I have understood that I need to export the SEPA mandates and import them into Diamant.'),
                         required=True,
                     ),
-                ),                
-                (
-                    'due_date',
-                    forms.DateField(
-                        label=_('Debit date'),
-                        help_text=_('The date when the sepa mandates are due.'),
-                        widget=forms.DateInput(
-                            attrs={'class': 'datepickerfield'})
-                    )
                 ),
                 (
                     "creditor_name",
@@ -184,6 +175,20 @@ class DPSGSepaDebit(BasePaymentProvider):
                         - settings.ENTROPY["order_code"]
                         - 2
                         - len(self.event.slug),
+                    ),
+                ),
+                (
+                    "prenotification_days",
+                    forms.IntegerField(
+                        label=_("Pre-notification time"),
+                        help_text=_(
+                            "Number of days between the placement of the order and the due date of the direct "
+                            "debit. Depending on your legislation and your bank rules, you might be required to "
+                            "hand in a debit at least 5 days before the due date at your bank and you might even "
+                            "be required to inform the customer at least 14 days beforehand. We recommend "
+                            "configuring at least 7 days."
+                        ),
+                        min_value=1,
                     ),
                 ),
                 (
@@ -386,7 +391,7 @@ class DPSGSepaDebit(BasePaymentProvider):
         return False
 
     def payment_form_render(self, request) -> str:
-        template = get_template("pretix_dpsg_sepadebit/checkout_payment_form.html")
+        template = get_template("pretix_sepadebit/checkout_payment_form.html")
         ctx = {
             "request": request,
             "event": self.event,
@@ -397,7 +402,7 @@ class DPSGSepaDebit(BasePaymentProvider):
         return template.render(ctx)
 
     def checkout_confirm_render(self, request) -> str:
-        template = get_template("pretix_dpsg_sepadebit/checkout_payment_confirm.html")
+        template = get_template("pretix_sepadebit/checkout_payment_confirm.html")
         ctx = {
             "request": request,
             "event": self.event,
@@ -435,8 +440,6 @@ class DPSGSepaDebit(BasePaymentProvider):
                 },
             )[0]
 
-            payment.save()
-
             payment.confirm(mail_text=self.order_pending_mail_render(payment.order))
         except Quota.QuotaExceededException as e:
             due.delete()
@@ -447,12 +450,12 @@ class DPSGSepaDebit(BasePaymentProvider):
             del request.session["payment_sepa_bic"]
 
     def payment_pending_render(self, request: HttpRequest, payment: OrderPayment):
-        template = get_template("pretix_dpsg_sepadebit/pending.html")
+        template = get_template("pretix_sepadebit/pending.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings}
         return template.render(ctx)
 
     def payment_control_render(self, request: HttpRequest, payment: OrderPayment):
-        template = get_template("pretix_dpsg_sepadebit/control.html")
+        template = get_template("pretix_sepadebit/control.html")
         ctx = {
             "request": request,
             "event": self.event,
@@ -472,7 +475,7 @@ class DPSGSepaDebit(BasePaymentProvider):
         if self.settings.reference_prefix:
             ref = self.settings.reference_prefix + "-" + ref
 
-        template = get_template("pretix_dpsg_sepadebit/mail.txt")
+        template = get_template("pretix_sepadebit/mail.txt")
         ctx = {
             "event": self.event,
             "order": order,
@@ -484,8 +487,8 @@ class DPSGSepaDebit(BasePaymentProvider):
         return template.render(ctx)
 
     def _due_date(self, order=None):
-        due_date = self.settings.get('due_date')
-        return datetime.strptime(due_date, '%Y-%m-%d')
+        due_date = self._due_date_reminded(order)
+        return due_date[0]
 
     def _due_date_reminded(self, order=None):
         startdate = order.datetime.date() if order else now().date()

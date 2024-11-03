@@ -11,12 +11,12 @@ from pretix.base.models import (
 )
 from unittest import mock
 
-from pretix_dpsg_sepadebit.models import SepaDueDate
-from pretix_dpsg_sepadebit.payment import SepaDebit
-from pretix_dpsg_sepadebit.signals import mail_placeholders, send_payment_reminders
-from pretix_dpsg_sepadebit.views import EventExportListView, OrganizerExportListView
+from pretix_sepadebit.models import SepaDueDate
+from pretix_sepadebit.payment import SepaDebit
+from pretix_sepadebit.signals import mail_placeholders, send_payment_reminders
+from pretix_sepadebit.views import EventExportListView, OrganizerExportListView
 
-migration = importlib.import_module("pretix_dpsg_sepadebit.migrations.0007_sepaduedate")
+migration = importlib.import_module("pretix_sepadebit.migrations.0007_sepaduedate")
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def event():
     event.settings.set("payment_sepadebit__enabled", True)
     event.currency = "€"
 
-    event.enable_plugin("pretix_dpsg_sepadebit")
+    event.enable_plugin("pretix_sepadebit")
     event.save()
 
     quota = Quota.objects.create(name="Test", size=2, event=event)

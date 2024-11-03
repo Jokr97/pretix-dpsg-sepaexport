@@ -22,12 +22,12 @@ from pretix.base.signals import (
 from pretix.base.templatetags.money import money_filter
 from pretix.control.signals import nav_event, nav_organizer
 
-from .payment import SepaDebit, SepaDueDate
+from .payment import DPSGSepaDebit, SepaDueDate
 
 
 @receiver(register_payment_providers, dispatch_uid="payment_sepadebit")
 def register_payment_provider(sender, **kwargs):
-    return SepaDebit
+    return DPSGSepaDebit
 
 
 @receiver(event_live_issues, dispatch_uid="payment_sepadebit_event_live")
@@ -48,14 +48,14 @@ def control_nav_import(sender, request=None, **kwargs):
         {
             "label": _("SEPA debit"),
             "url": reverse(
-                "plugins:pretix_dpsg_sepadebit:export",
+                "plugins:pretix_sepadebit:export",
                 kwargs={
                     "event": request.event.slug,
                     "organizer": request.event.organizer.slug,
                 },
             ),
             "active": (
-                url.namespace == "plugins:pretix_dpsg_sepadebit" and url.url_name == "export"
+                url.namespace == "plugins:pretix_sepadebit" and url.url_name == "export"
             ),
             "icon": "bank",
         }
@@ -69,19 +69,19 @@ def control_nav_orga_sepadebit(sender, request=None, **kwargs):
         request.organizer, "can_change_organizer_settings", request=request
     ):
         return []
-    if not request.organizer.events.filter(plugins__icontains="pretix_dpsg_sepadebit"):
+    if not request.organizer.events.filter(plugins__icontains="pretix_sepadebit"):
         return []
     return [
         {
             "label": _("SEPA debit"),
             "url": reverse(
-                "plugins:pretix_dpsg_sepadebit:export",
+                "plugins:pretix_sepadebit:export",
                 kwargs={
                     "organizer": request.organizer.slug,
                 },
             ),
             "active": (
-                url.namespace == "plugins:pretix_dpsg_sepadebit" and url.url_name == "export"
+                url.namespace == "plugins:pretix_sepadebit" and url.url_name == "export"
             ),
             "icon": "bank",
         }
@@ -90,16 +90,6 @@ def control_nav_orga_sepadebit(sender, request=None, **kwargs):
 
 @receiver(register_data_exporters, dispatch_uid="payment_sepadebit_export_csv")
 def register_csv(sender, **kwargs):
-    from .exporters import DebitList
-
-    return DebitList
-
-
-@receiver(
-    register_multievent_data_exporters,
-    dispatch_uid="payment_multievent_sepadebit_export_csv",
-)
-def register_csv_multievent(sender, **kwargs):
     from .exporters import DebitList
 
     return DebitList
@@ -213,7 +203,7 @@ def send_payment_reminders(sender, **kwargs):
                     subject=str(subject),
                     template=text,
                     context=ctx,
-                    log_entry_type="pretix_dpsg_sepadebit.payment_reminder.sent.order.email",
+                    log_entry_type="pretix_sepadebit.payment_reminder.sent.order.email",
                 )
                 due_date.reminded = True
                 due_date.save()
@@ -224,7 +214,7 @@ def send_payment_reminders(sender, **kwargs):
     dispatch_uid="payment_sepadebit_send_payment_reminders_logentry",
 )
 def payment_reminder_logentry(sender, logentry, **kwargs):
-    if logentry.action_type != "pretix_dpsg_sepadebit.payment_reminder.sent.order.email":
+    if logentry.action_type != "pretix_sepadebit.payment_reminder.sent.order.email":
         return
 
     return _(

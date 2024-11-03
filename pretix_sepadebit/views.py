@@ -22,13 +22,13 @@ from pretix.control.permissions import (
 from pretix.control.views.organizer import OrganizerDetailViewMixin
 from sepaxml import SepaDD, validation
 
-from pretix_dpsg_sepadebit.models import SepaExport, SepaExportOrder
+from pretix_sepadebit.models import SepaExport, SepaExportOrder
 
 logger = logging.getLogger(__name__)
 
 
 class ExportListView(ListView):
-    template_name = "pretix_dpsg_sepadebit/export.html"
+    template_name = "pretix_sepadebit/export.html"
     model = SepaExport
     context_object_name = "exports"
 
@@ -182,7 +182,7 @@ class ExportListView(ListView):
         if hasattr(request, "event"):
             return redirect(
                 reverse(
-                    "plugins:pretix_dpsg_sepadebit:export",
+                    "plugins:pretix_sepadebit:export",
                     kwargs={
                         "event": request.event.slug,
                         "organizer": request.organizer.slug,
@@ -192,7 +192,7 @@ class ExportListView(ListView):
         else:
             return redirect(
                 reverse(
-                    "plugins:pretix_dpsg_sepadebit:export",
+                    "plugins:pretix_sepadebit:export",
                     kwargs={
                         "organizer": request.organizer.slug,
                     },
@@ -221,7 +221,7 @@ class DownloadView(DetailView):
 class OrdersView(DetailView):
     model = SepaExport
     context_object_name = "export"
-    template_name = "pretix_dpsg_sepadebit/orders.html"
+    template_name = "pretix_sepadebit/orders.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -345,7 +345,7 @@ class OrganizerExportListView(
         today = now().astimezone(self.request.organizer.timezone).today()
 
         for event in Event.objects.filter(
-            organizer=self.request.organizer, plugins__contains="pretix_dpsg_sepadebit"
+            organizer=self.request.organizer, plugins__contains="pretix_sepadebit"
         ):
             try:
                 latest_export_due_date = today + datetime.timedelta(

@@ -8,14 +8,14 @@ from django.db import migrations, models
 
 def roll_forwards(apps, schema_editor):
     OrderPayment = apps.get_model("pretixbase", "OrderPayment")
-    SepaDueDate = apps.get_model("pretix_dpsg_sepadebit", "SepaDueDate")
+    SepaDueDate = apps.get_model("pretix_sepadebit", "SepaDueDate")
 
     create_sepaduedate_instances(OrderPayment, SepaDueDate)
 
 
 def roll_backwards(apps, schema_editor):
     OrderPayment = apps.get_model("pretixbase", "OrderPayment")
-    SepaDueDate = apps.get_model("pretix_dpsg_sepadebit", "SepaDueDate")
+    SepaDueDate = apps.get_model("pretix_sepadebit", "SepaDueDate")
 
     delete_sepaduedate_instances(OrderPayment, SepaDueDate)
 
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("pretixbase", "0181_team_can_checkin_orders"),
-        ("pretix_dpsg_sepadebit", "0006_sepaexport_currency"),
+        ("pretix_sepadebit", "0006_sepaexport_currency"),
     ]
 
     operations = [
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
 
 def create_sepaduedate_instances(OrderPayment, SepaDueDate):
     for op in OrderPayment.objects.filter(provider="sepadebit").filter(
-        info__isnull=False
+        info__isnull=False,
     ):
         # prevents dependency from the info_data property
         op_info_data = json.loads(op.info)

@@ -5,15 +5,15 @@ from . import __version__
 
 
 class PluginApp(AppConfig):
-    name = "pretix_dpsg_sepadebit"
-    verbose_name = "SEPA Direct debit for pretix"
+    name = "pretix_sepadebit"
+    verbose_name = "DPSG SEPA Direct debit for pretix"
 
     class PretixPluginMeta:
-        name = gettext_lazy("SEPA Direct debit")
+        name = gettext_lazy("DPSG SEPA Direct debit")
         category = "PAYMENT"
-        author = "Raphael Michel"
+        author = "Prisma Team (Raphael Michel)"
         description = gettext_lazy(
-            "This plugin adds SEPA direct debit support to pretix"
+            "This plugin adds SEPA direct debit support to pretix for DPSG invoicing tool Diamant"
         )
         visible = True
         version = __version__
