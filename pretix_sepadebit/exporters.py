@@ -53,7 +53,6 @@ class DebitList(BaseExporter):
         diamant_invoices = []
 
         for mandate in mandates:
-            print(mandate.info_data)
             if not mandate.order.invoices.exists():
                 print('No invoice found for order ' + mandate.order.code)
                 continue
@@ -128,7 +127,5 @@ class DebitList(BaseExporter):
             zip_archive.writestr('diamant_invoice.csv', diamant_invoice_file.getvalue())
             zip_archive.writestr('sepa_address.csv', sepa_address_file.getvalue())
             zip_archive.writestr('mandate_export.csv', mandate_export_file.getvalue())
-
-        print(archive.getbuffer().nbytes)
 
         return ('sepaexports.zip', 'application/zip', archive.getbuffer())
