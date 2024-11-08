@@ -88,7 +88,7 @@ class DebitList(BaseExporter):
             sepa_address['PLZ'] = mandate.order.invoice_address.zipcode
             sepa_address['Ort'] = mandate.order.invoice_address.city
             sepa_address['Land'] = mandate.order.invoice_address.country
-            sepa_address['E-Mail Adresse'] = mandate.order.invoice_address.city
+            sepa_address['E-Mail Adresse'] = mandate.order.email
             sepa_addresses.append(sepa_address)
 
             diamant_invoice = {}
