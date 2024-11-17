@@ -94,6 +94,12 @@ def register_csv(sender, **kwargs):
 
     return DebitList
 
+@receiver(register_data_exporters, dispatch_uid="payment_banktransfer_export_csv")
+def register_transfer_csv(sender, **kwargs):
+    from .exporters import TransferList
+
+    return TransferList
+
 
 DueDatePlaceholder = SimpleFunctionalMailTextPlaceholder(
     "due_date",

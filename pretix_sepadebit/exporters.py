@@ -2,11 +2,12 @@ import csv
 import io
 import zipfile
 import pytz
-from datetime import datetime
 
+from django.db.models import Q
 from django.utils.translation import gettext as _, gettext_lazy, pgettext_lazy
 from pretix.base.exporter import BaseExporter
 from pretix.base.models import Order, OrderPosition, Question, OrderPayment
+from pretix.plugins.banktransfer.payment import BankTransfer
 
 from pretix_sepadebit.payment import DPSGSepaDebit
 from pretix.base.settings import SettingsSandbox
@@ -128,4 +129,96 @@ class DebitList(BaseExporter):
             zip_archive.writestr('sepa_address.csv', sepa_address_file.getvalue())
             zip_archive.writestr('mandate_export.csv', mandate_export_file.getvalue())
 
-        return ('sepaexports.zip', 'application/zip', archive.getbuffer())
+        return 'sepaexports.zip', 'application/zip', archive.getbuffer()
+
+
+class TransferList(BaseExporter):
+    identifier = "transferlistcsv"
+    verbose_name = gettext_lazy("DPSG: List of all bank transfer payments (CSVs)")
+    category = pgettext_lazy("export_category", "Invoices")
+    description = gettext_lazy(
+        "Download a spreadsheet of all bank transfers (State 'Created', 'Pending' & 'Confirmed') that have been made. Includes invoice address export and Diamant invoice export as csv files in a zip archive."
+    )
+
+    def __init__(self, event, organizer, progress_callback=lambda v: None):
+        super().__init__(event, organizer, progress_callback)
+        self.settings = SettingsSandbox('payment', BankTransfer.identifier, event)
+    def render(self, form_data: dict):
+
+        invoice_address_headers = ['Kontonummer', 'Name 1', 'Straße', 'PLZ', 'Ort', 'E-Mail Adresse', 'Land']
+
+        diamant_invoice_headers =['KZ', 'Datum', 'Rechnung', 'Kunde', 'SAKO', 'Belegung', 'Wert1', 'Steuersatz', 'Steuer', 'KSt', 'KTr', 'KZ2', 'Wert_KR', 'Waehrung', 'Wert2', 'Konsolidierung']
+
+        invoice_address_file = io.StringIO()
+        diamant_invoice_file = io.StringIO()
+
+        invoice_address_writer = csv.DictWriter(invoice_address_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=invoice_address_headers)
+        diamant_invoice_writer = csv.DictWriter(diamant_invoice_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=diamant_invoice_headers)
+
+        transfer_payments = OrderPayment.objects.filter(order__event=self.event).filter(provider=BankTransfer.identifier).filter(Q(state=OrderPayment.PAYMENT_STATE_CREATED) | Q(state=OrderPayment.PAYMENT_STATE_PENDING) | Q(state=OrderPayment.PAYMENT_STATE_CONFIRMED)).select_related("order")
+
+        tz = pytz.timezone(self.event.settings.timezone)
+
+        sako = self.settings.get('diamant_nominal_account')
+        belegung = self.settings.get('diamant_description')
+        kst = self.settings.get('diamant_nominal_account')
+        ktr = self.settings.get('diamant_cost_object')
+        prefix = self.settings.get('reference_prefix')
+
+        mandate_exports = []
+        invoice_addresses = []
+        diamant_invoices = []
+
+        for payment in transfer_payments:
+            if not payment.order.invoices.exists():
+                print('No invoice found for order ' + payment.order.code)
+                continue
+            last_invoice = payment.order.invoices.last()
+            invoice_no = last_invoice.invoice_no
+            common_key = prefix + invoice_no[-4:]
+
+            full_invoice_no = last_invoice.full_invoice_no
+
+            invoice_address = {}
+            invoice_address['Kontonummer'] = common_key
+            invoice_address['Name 1'] = payment.order.invoice_address.name
+            invoice_address['Straße'] = payment.order.invoice_address.street
+            invoice_address['PLZ'] = payment.order.invoice_address.zipcode
+            invoice_address['Ort'] = payment.order.invoice_address.city
+            invoice_address['Land'] = payment.order.invoice_address.country
+            invoice_address['E-Mail Adresse'] = payment.order.email
+            invoice_addresses.append(invoice_address)
+
+            diamant_invoice = {}
+            diamant_invoice['Kunde'] = common_key
+            diamant_invoice['KZ'] = 'L'
+            diamant_invoice['Datum'] = payment.sepadebit_due.date.strftime('%Y%m%d')
+            diamant_invoice['Rechnung'] = full_invoice_no
+            diamant_invoice['SAKO'] = sako
+            diamant_invoice['Belegung'] = belegung + ' - ' + full_invoice_no
+            diamant_invoice['Wert1'] = payment.order.total
+            diamant_invoice['Steuersatz'] = 0
+            diamant_invoice['Steuer'] = 0
+            diamant_invoice['KSt'] = kst
+            diamant_invoice['KTr'] = ktr
+            diamant_invoice['KZ2'] = 1
+            diamant_invoice['Wert_KR'] = payment.order.total * -1
+            diamant_invoice['Waehrung'] = 'EUR'
+            diamant_invoice['Wert2'] = payment.order.total
+            diamant_invoice['Konsolidierung'] = ''
+            diamant_invoices.append(diamant_invoice)
+
+        invoice_address_writer.writeheader()
+        for row in invoice_addresses:
+            invoice_address_writer.writerow(row)
+
+        diamant_invoice_writer.writeheader()
+        for row in diamant_invoices:
+            diamant_invoice_writer.writerow(row)
+
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, mode='w') as zip_archive:
+            zip_archive.writestr('diamant_invoice.csv', diamant_invoice_file.getvalue())
+            zip_archive.writestr('invoice_address.csv', invoice_address_file.getvalue())
+
+        return 'banktransfer_exports.zip', 'application/zip', archive.getbuffer()
