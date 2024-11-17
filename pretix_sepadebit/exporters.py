@@ -192,7 +192,7 @@ class TransferList(BaseExporter):
             diamant_invoice = {}
             diamant_invoice['Kunde'] = common_key
             diamant_invoice['KZ'] = 'L'
-            diamant_invoice['Datum'] = payment.sepadebit_due.date.strftime('%Y%m%d')
+            diamant_invoice['Datum'] = last_invoice.date
             diamant_invoice['Rechnung'] = full_invoice_no
             diamant_invoice['SAKO'] = sako
             diamant_invoice['Belegung'] = belegung + ' - ' + full_invoice_no
