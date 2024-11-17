@@ -142,7 +142,7 @@ class TransferList(BaseExporter):
 
     def __init__(self, event, organizer, progress_callback=lambda v: None):
         super().__init__(event, organizer, progress_callback)
-        self.settings = SettingsSandbox('payment', BankTransfer.identifier, event)
+        self.settings = SettingsSandbox('payment', DPSGSepaDebit.identifier, event)
     def render(self, form_data: dict):
 
         invoice_address_headers = ['Kontonummer', 'Name 1', 'Straße', 'PLZ', 'Ort', 'E-Mail Adresse', 'Land']
