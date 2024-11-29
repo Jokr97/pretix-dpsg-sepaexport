@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils.translation import gettext as _, gettext_lazy, pgettext_lazy
 from pretix.base.exporter import BaseExporter
 from pretix.base.models import Order, OrderPosition, Question, OrderPayment
+from pretix.base.payment import ManualPayment
 from pretix.plugins.banktransfer.payment import BankTransfer
 
 from pretix_sepadebit.payment import DPSGSepaDebit
@@ -155,7 +156,7 @@ class TransferList(BaseExporter):
         invoice_address_writer = csv.DictWriter(invoice_address_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=invoice_address_headers)
         diamant_invoice_writer = csv.DictWriter(diamant_invoice_file, quoting=csv.QUOTE_NONNUMERIC, delimiter=",", fieldnames=diamant_invoice_headers)
 
-        transfer_payments = OrderPayment.objects.filter(order__event=self.event).filter(provider=BankTransfer.identifier).filter(Q(state=OrderPayment.PAYMENT_STATE_CREATED) | Q(state=OrderPayment.PAYMENT_STATE_PENDING) | Q(state=OrderPayment.PAYMENT_STATE_CONFIRMED)).select_related("order")
+        transfer_payments = OrderPayment.objects.filter(order__event=self.event).filter(Q(provider=BankTransfer.identifier) | Q(provider=ManualPayment.identifier)).filter(Q(state=OrderPayment.PAYMENT_STATE_CREATED) | Q(state=OrderPayment.PAYMENT_STATE_PENDING) | Q(state=OrderPayment.PAYMENT_STATE_CONFIRMED)).select_related("order")
 
         tz = pytz.timezone(self.event.settings.timezone)
 
